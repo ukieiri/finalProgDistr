@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,26 +55,12 @@ public class UserDBReadWrite {
 
 	static public void register(User user) {
 		File dbUser = new File("C:/temp/user.db");
-		if (dbUser.isFile()) {
-			BufferedWriter bufferOut = null;
-			try {
-				bufferOut = new BufferedWriter(new FileWriter(dbUser));
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
 
-			try {
-				bufferOut.write(user.getName() + ";" + user.getPassword()
-						+ System.getProperty("line.separator"));
-
-				bufferOut.flush();
-				bufferOut.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
+		try (PrintWriter out = new PrintWriter(new BufferedWriter(
+				new FileWriter(dbUser, true)))) {
+			out.println(user.getName() + ";" + user.getPassword());
+		} catch (IOException e) {
+			System.err.println(e);
 		}
-
 	}
-
 }

@@ -12,15 +12,16 @@ public class Client {
 
 		Socket socket = null;
 
-		byte[] myIp = new byte[4];
-		myIp[0] = (byte) 192;
-		myIp[1] = (byte) 168;
-		myIp[2] = (byte) 1;
-		myIp[3] = (byte) 103;
+		// byte[] myIp = new byte[4];
+		// myIp[0] = (byte) 192;
+		// myIp[1] = (byte) 168;
+		// myIp[2] = (byte) 1;
+		// myIp[3] = (byte) 103;
 
 		try {
 			// get the server address
-			InetAddress ServerAddress = InetAddress.getByAddress("", myIp);
+			// TODO Change by the normal address or let it like this.
+			InetAddress ServerAddress = InetAddress.getLocalHost();
 			System.out.println("Get the address of the server : "
 					+ ServerAddress);
 
