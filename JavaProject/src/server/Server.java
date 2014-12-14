@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.logging.Logger;
 
 public class Server {
@@ -22,7 +20,7 @@ public class Server {
 
 	// TODO other version of this if possible.. so bad.Perhaps view the server
 	// has an object.. we will see.
-	private final static List<User> userList = new ArrayList<User>();
+	private final static Users users = new Users();
 
 	public static void main(String[] args) throws SecurityException,
 			IOException {
@@ -38,6 +36,7 @@ public class Server {
 			// Create the server socket and listen to the port
 			localAddress = InetAddress.getLocalHost();
 			MySkServer = new ServerSocket(port, 10, localAddress);
+			users.addAll(UserDBReadWrite.read());
 
 			// wait for a client connection
 			while (true) {
@@ -55,8 +54,6 @@ public class Server {
 
 			e.printStackTrace();
 		}
-
-		userList.addAll(UserDBReadWrite.read());
 	}
 
 	private static String initDate() {
@@ -68,7 +65,7 @@ public class Server {
 		return sb.toString();
 	}
 
-	public static List<User> getUserlist() {
-		return userList;
+	public static Users getUserlist() {
+		return users;
 	}
 }

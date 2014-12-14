@@ -38,6 +38,10 @@ public class Client {
 			Pout.println("");
 			Pout.flush();
 
+			Pout.println("CONNECT Test password");
+			Pout.println("");
+			Pout.flush();
+
 			// Then die
 			System.out.println("now dying....");
 			socket.close();

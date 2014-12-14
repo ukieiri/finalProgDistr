@@ -8,11 +8,14 @@ import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
+import exception.AlreadyInUseUsername;
+import exception.UsernameNotFoundException;
+
 public class AcceptClient implements Runnable {
 
 	protected Socket mySkClient;
 	protected BufferedReader inClient;
-	protected PrintWriter outCLient;
+	protected PrintWriter outClient;
 	private User user;
 
 	public AcceptClient(Socket cSocket) {
@@ -20,7 +23,7 @@ public class AcceptClient implements Runnable {
 		try {
 			Server.logger.info("Create output stream with"
 					+ mySkClient.toString());
-			outCLient = new PrintWriter(mySkClient.getOutputStream());
+			outClient = new PrintWriter(mySkClient.getOutputStream());
 
 			Server.logger.info("Create input stream with"
 					+ mySkClient.toString());
@@ -34,8 +37,8 @@ public class AcceptClient implements Runnable {
 	}
 
 	private void send(String text) throws InterruptedException {
-		outCLient.println(text);
-		outCLient.flush();
+		outClient.println(text);
+		outClient.flush();
 	}
 
 	// overwrite the thread run()
@@ -63,17 +66,14 @@ public class AcceptClient implements Runnable {
 					continue;
 				}
 
+				if (cmdFrClient.startsWith("CONNECT")) {
+					cmdConnect(cmdFrClient);
+					continue;
+				}
+
 				// String cmdWord = cmdFrClient.substring(0,
 				// cmdFrClient.indexOf(" "));
 				// switch (cmdWord) {
-				// case "CONNECT":
-				// // TODO Connect method
-				// break;
-				// case "REGISTER":
-				// cmdRegister(cmdFrClient);
-				// // TODO REGISTER method
-				//
-				// break;
 				// case "MESSAGE":
 				// // TODO MESSAGE method
 				//
@@ -106,6 +106,61 @@ public class AcceptClient implements Runnable {
 		}
 	}
 
+	private void cmdConnect(String cmdLine) throws Exception {
+		// CONNECT Username Password
+		String[] attributes = cmdLine.split(" ");
+		if (attributes.length != 3) {
+			throw new Exception();
+		}
+		connect(attributes[1], attributes[2]);
+
+	}
+
+	private void connect(String username, String password) {
+		User temp;
+		try {
+			temp = Server.getUserlist().get(username);
+		} catch (UsernameNotFoundException e1) {
+			outClient.println("RESPONSE 1003");
+			return;
+		}
+
+		try {
+			if (PasswordHash.validatePassword(password, temp.getPassword())) {
+				if (!temp.getConnected()) {
+					user = temp;
+					user.setConnected(true);
+					Server.logger.info(temp.getName()
+							+ " has connected successfully.");
+					outClient.println("RESPONSE 1");
+
+				} else {
+					Server.logger.info(temp.getName()
+							+ " was already connected.");
+					outClient.println("RESPONSE 1001");
+					return;
+				}
+
+			} else {
+				Server.logger.info(temp.getName()
+						+ " tried to connect with a incorrect password");
+				outClient.println("RESPONSE 1002");
+			}
+		} catch (NoSuchAlgorithmException e) {
+			Server.logger
+					.severe("Problem with the password algorithm with user "
+							+ temp.getName());
+			outClient.println("RESPONSE 3000");
+
+		} catch (InvalidKeySpecException e) {
+			Server.logger
+					.severe("Problem with the validation of the password with user "
+							+ temp.getName());
+			outClient.println("RESPONSE 3001");
+		}
+
+	}
+
 	private void cmdRegister(String cmdLine) throws Exception {
 		// REGISTER Username Password
 		String[] attributes = cmdLine.split(" ");
@@ -119,10 +174,16 @@ public class AcceptClient implements Runnable {
 	private void register(String username, String password)
 			throws NoSuchAlgorithmException, InvalidKeySpecException {
 		user = new User(username, PasswordHash.createHash(password));
-		// TODO Throws already existing user
 
-		UserDBReadWrite.register(user);
+		try {
+			Server.getUserlist().addUser(user);
+			UserDBReadWrite.register(user);
 
+		} catch (AlreadyInUseUsername e) {
+
+			outClient.println("RESPONSE 1000");
+			// TODO Message back the Client because there is a problem
+		}
 	}
 
 	private void close() {

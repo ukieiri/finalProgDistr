@@ -33,11 +33,11 @@ public class UserDBReadWrite {
 							break;
 						} else {
 							String[] attributes = textRead.split(";");
-							if (attributes.length != 2) {
+							if (attributes.length != 3) {
 								Server.logger.severe("ERROR IN USER DATABASE");
 								continue;
 							}
-							userList.add(new User(attributes[0], attributes[1]));
+							userList.add(new User(attributes[1], attributes[2]));
 							Server.logger.info(attributes[0]);
 						}
 
@@ -58,7 +58,8 @@ public class UserDBReadWrite {
 
 		try (PrintWriter out = new PrintWriter(new BufferedWriter(
 				new FileWriter(dbUser, true)))) {
-			out.println(user.getName() + ";" + user.getPassword());
+			out.println(user.getId() + ";" + user.getName() + ";"
+					+ user.getPassword());
 		} catch (IOException e) {
 			System.err.println(e);
 		}
