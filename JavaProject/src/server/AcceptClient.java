@@ -7,9 +7,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-
-import exception.AlreadyInUseUsername;
-import exception.UsernameNotFoundException;
+import java.util.Map;
 
 public class AcceptClient implements Runnable {
 
@@ -36,8 +34,9 @@ public class AcceptClient implements Runnable {
 		}
 	}
 
-	private void send(String text) throws InterruptedException {
-		outClient.println(text);
+	private void send(Object text) {
+		outClient.println(text.toString());
+		outClient.println("END OF TRANSMISSION");
 		outClient.flush();
 	}
 
@@ -48,6 +47,7 @@ public class AcceptClient implements Runnable {
 	// REGISTER Username Password
 	// MESSAGE FROM Username TO Username Timestamp Message
 	// RESPONSE Code
+	// GETUSERLIST
 	// PING
 	// PONG
 
@@ -70,6 +70,51 @@ public class AcceptClient implements Runnable {
 					cmdConnect(cmdFrClient);
 					continue;
 				}
+
+				if (cmdFrClient.startsWith("GETUSERLIST")) {
+
+					Map<String, Boolean> userList = Server.getUserlist()
+							.getListForClient();
+					send(userList.toString());
+					continue;
+				}
+
+				if (cmdFrClient.startsWith("WHOAMI")) {
+					if (user != null) {
+						send(user.getName());
+
+					} else {
+						send("NOBODY");
+					}
+
+					continue;
+				}
+
+				if (cmdFrClient.startsWith("DISCONNECT")) {
+					if (user != null) {
+						user.setConnected(false);
+						user = null;
+						send("RESPONSE 3");
+
+					}
+					send("RESPONSE 4000");
+				}
+
+				if (cmdFrClient.startsWith("QUIT")) {
+					close();
+					break;
+				}
+
+				if (cmdFrClient.startsWith("SHUTDOWN")) {
+					if (user != null && user.getName().equals("ADMIN")) {
+						// TODO other way to do the same thing
+						System.exit(0);
+					}
+					send("RESPONSE NO RIGHT");
+					continue;
+				}
+
+				send("RESPONSE 404");
 
 				// String cmdWord = cmdFrClient.substring(0,
 				// cmdFrClient.indexOf(" "));
@@ -117,13 +162,13 @@ public class AcceptClient implements Runnable {
 	}
 
 	private void connect(String username, String password) {
-		User temp;
-		try {
-			temp = Server.getUserlist().get(username);
-		} catch (UsernameNotFoundException e1) {
-			outClient.println("RESPONSE 1003");
+		if (user != null) {
+			send("RESPONSE Already Connected");
 			return;
 		}
+
+		User temp;
+		temp = Server.getUserlist().get(username);
 
 		try {
 			if (PasswordHash.validatePassword(password, temp.getPassword())) {
@@ -132,31 +177,31 @@ public class AcceptClient implements Runnable {
 					user.setConnected(true);
 					Server.logger.info(temp.getName()
 							+ " has connected successfully.");
-					outClient.println("RESPONSE 1");
+					send("RESPONSE SUCCESS");
 
 				} else {
 					Server.logger.info(temp.getName()
 							+ " was already connected.");
-					outClient.println("RESPONSE 1001");
+					send("RESPONSE User can not be connected at two clients");
 					return;
 				}
 
 			} else {
 				Server.logger.info(temp.getName()
 						+ " tried to connect with a incorrect password");
-				outClient.println("RESPONSE 1002");
+				send("RESPONSE 1002");
 			}
 		} catch (NoSuchAlgorithmException e) {
 			Server.logger
 					.severe("Problem with the password algorithm with user "
 							+ temp.getName());
-			outClient.println("RESPONSE 3000");
+			send("RESPONSE 3000");
 
 		} catch (InvalidKeySpecException e) {
 			Server.logger
 					.severe("Problem with the validation of the password with user "
 							+ temp.getName());
-			outClient.println("RESPONSE 3001");
+			send("RESPONSE 3001");
 		}
 
 	}
@@ -173,21 +218,33 @@ public class AcceptClient implements Runnable {
 
 	private void register(String username, String password)
 			throws NoSuchAlgorithmException, InvalidKeySpecException {
+
+		if (!username.matches("[a-zA-Z\\s']+")) {
+			// TODO throws invalid expression
+			send("RESPONSE 2000");
+			return;
+		}
+
+		if (Server.getUserlist().containsUsername(username)) {
+			send("RESPONSE 1010");
+			Server.logger.warning(mySkClient.toString()
+					+ " tried to register an already registered username.");
+			return;
+		}
 		user = new User(username, PasswordHash.createHash(password));
 
-		try {
-			Server.getUserlist().addUser(user);
-			UserDBReadWrite.register(user);
-
-		} catch (AlreadyInUseUsername e) {
-
-			outClient.println("RESPONSE 1000");
-			// TODO Message back the Client because there is a problem
-		}
+		Server.getUserlist().addUser(user);
+		UserDBReadWrite.register(user);
+		send("RESPONSE 1");
 	}
 
 	private void close() {
+		if (user != null) {
+			user.setConnected(false);
+		}
+
 		try {
+			send("QUIT");
 			mySkClient.close();
 			Server.logger.info("Connection closed with "
 					+ mySkClient.toString());
@@ -196,4 +253,5 @@ public class AcceptClient implements Runnable {
 			Server.logger.severe(e.getMessage());
 		}
 	}
+
 }

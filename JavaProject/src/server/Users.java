@@ -1,45 +1,40 @@
 package server;
 
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Observable;
+import java.util.Map;
 
-import exception.AlreadyInUseUsername;
-import exception.UsernameNotFoundException;
+public class Users {
 
-public class Users extends Observable {
-
-	List<User> list = new ArrayList<User>();
+	Map<String, User> map = new LinkedHashMap<String, User>();
 
 	public void addAll(List<User> read) {
-
-		list.addAll(read);
-	}
-
-	public List<User> getList() {
-		return list;
-	}
-
-	public User get(String username) throws UsernameNotFoundException {
-		for (User i : list) {
-			if (i.getName().equals(username))
-				return i;
+		// Add value to the map
+		for (User i : read) {
+			map.put(i.getName(), i);
 		}
-		throw new UsernameNotFoundException(username);
+	}
+
+	public User get(String username) {
+		return map.get(username);
 	}
 
 	public boolean containsUsername(String username) {
-		for (User i : list) {
-			if (i.getName().equals(username))
-				return true;
-		}
-		return false;
+		return map.containsKey(username);
 	}
 
-	public void addUser(User user) throws AlreadyInUseUsername {
-		if (containsUsername(user.getName())) {
-			throw new AlreadyInUseUsername(user);
+	public void addUser(User user) {
+		map.put(user.getName(), user);
+	}
+
+	public Map<String, Boolean> getListForClient() {
+
+		// Only send Username and if the user is connected to the clients
+		Map<String, Boolean> forClient = new LinkedHashMap<String, Boolean>();
+		for (User i : map.values()) {
+			forClient.put(i.getName(), i.getConnected());
 		}
-		list.add(user);
+
+		return forClient;
 	}
 }

@@ -45,7 +45,9 @@ public class Server {
 
 				logger.info("New Connection "
 						+ clientSocket.getInetAddress().toString());
+
 				Thread t = new Thread(new AcceptClient(clientSocket));
+
 				// starting the thread
 				t.start();
 			}
