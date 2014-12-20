@@ -1,67 +1,94 @@
 package server;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 
 public class UserDBReadWrite {
 
-	static public List<User> read() {
-		List<User> userList = new ArrayList<User>();
-		File dbUser = new File("C:/temp/user.db");
+	static public Users read() {
+		InputStream fileInput = null;
 
-		if (dbUser.isFile()) {
-			BufferedReader bufferIn;
-			try {
-				bufferIn = new BufferedReader(new FileReader(dbUser));
-				while (true)
-					try {
-						String textRead = bufferIn.readLine();
+		try {
+			fileInput = new FileInputStream(Parameters.pathUserDB);
 
-						// Reached end of file
-						if (textRead == null) {
+			ObjectInputStream o = new ObjectInputStream(fileInput);
 
-							bufferIn.close();
-							Server.logger.info("END of USER DATABASE");
-							break;
-						} else {
-							String[] attributes = textRead.split(";");
-							if (attributes.length != 3) {
-								Server.logger.severe("ERROR IN USER DATABASE");
-								continue;
-							}
-							userList.add(new User(attributes[1], attributes[2]));
-							Server.logger.info(attributes[0]);
-						}
-
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-			} catch (FileNotFoundException e1) {
-				Server.logger.severe(e1.getMessage());
-
+			while (true) {
+				try {
+					return (Users) o.readObject();
+				} catch (EOFException e) {
+				} finally {
+					o.close();
+				}
 			}
+		} catch (FileNotFoundException e) {
+			// TODO
+			// myLogger.severe("Could not find UserList, creating new one.");
+			// System.err.println("Could not find UserList, creating new one.");
+		} catch (IOException e) {
+			// TODO
+			// myLogger.severe("An error occured, while reading the UserList");
+			// System.err.println("An error occured, while reading the UserList");
+		} catch (ClassNotFoundException e) {
+			// TODO myLogger.severe("UserList.class could not be found");
+			// System.err.println("UserList.class could not be found");
 		}
-		return userList;
+
+		// TODO Problem with the Users file / creating a new Users
+		return new Users();
 
 	}
 
-	static public void register(User user) {
-		File dbUser = new File("C:/temp/user.db");
+	public static void write(Users users) {
+		// if (!directory.exists()) {
+		// if (!directory.mkdirs()) {
+		// myLogger.severe("Error creating Directory");
+		// // System.err.println("Error creating Directory");
+		// return;
+		// }
+		// }
 
-		try (PrintWriter out = new PrintWriter(new BufferedWriter(
-				new FileWriter(dbUser, true)))) {
-			out.println(user.getId() + ";" + user.getName() + ";"
-					+ user.getPassword());
-		} catch (IOException e) {
-			System.err.println(e);
+		File file = new File(Parameters.pathUserDB);
+		OutputStream fileOut = null;
+		try {
+			fileOut = new FileOutputStream(file);
+			ObjectOutputStream outStream = null;
+
+			try {
+				outStream = new ObjectOutputStream(fileOut);
+
+				outStream.writeObject(users);
+			} catch (IOException e) {
+				// TODO perhaps a log for the error ?
+				e.printStackTrace();
+			} finally {
+				try {
+					if (outStream != null) {
+						outStream.close();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (fileOut != null)
+					fileOut.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+
 	}
 }

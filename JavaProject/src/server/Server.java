@@ -5,6 +5,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class Server {
@@ -13,19 +15,19 @@ public class Server {
 	// Command lines :
 	// CONNECT Username Password
 	// REGISTER Username Password
-	// MESSAGE FROM Username TO Username Timestamp Message
+	// MESSAGE Username Username Message
 	// RESPONSE Code
 	// PING
 	// PONG
 
 	// TODO other version of this if possible.. so bad.Perhaps view the server
 	// has an object.. we will see.
-	private final static Users users = new Users();
+	private Users users = new Users();
 
-	public static void main(String[] args) throws SecurityException,
-			IOException {
+	public Server() throws SecurityException, IOException {
 		// Init the logger
-		SocketFormatter.initLogger(logger, "C:/temp/" + initDate() + ".log");
+		SocketFormatter.initLogger(logger, Parameters.pathLog + initDate()
+				+ ".log");
 		InetAddress localAddress;
 		ServerSocket MySkServer;
 		int port = 45000;
@@ -36,17 +38,18 @@ public class Server {
 			// Create the server socket and listen to the port
 			localAddress = InetAddress.getLocalHost();
 			MySkServer = new ServerSocket(port, 10, localAddress);
-			users.addAll(UserDBReadWrite.read());
-
 			// wait for a client connection
+
+			Map<String, UserRunnable> connectedUser = new HashMap<String, UserRunnable>();
 			while (true) {
 
 				Socket clientSocket = MySkServer.accept();
 
 				logger.info("New Connection "
 						+ clientSocket.getInetAddress().toString());
-
-				Thread t = new Thread(new AcceptClient(clientSocket));
+				UserRunnable user = new UserRunnable(clientSocket,
+						connectedUser);
+				Thread t = new Thread(user);
 
 				// starting the thread
 				t.start();
@@ -58,6 +61,12 @@ public class Server {
 		}
 	}
 
+	public static void main(String[] args) throws SecurityException,
+			IOException {
+
+		new Server();
+	}
+
 	private static String initDate() {
 		Calendar calendar = Calendar.getInstance();
 		StringBuilder sb = new StringBuilder();
@@ -67,7 +76,7 @@ public class Server {
 		return sb.toString();
 	}
 
-	public static Users getUserlist() {
+	public Users getUserlist() {
 		return users;
 	}
 }

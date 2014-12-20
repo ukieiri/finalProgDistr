@@ -1,8 +1,6 @@
 package client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -34,26 +32,19 @@ public class Client {
 			socket = new Socket(ServerAddress, 45000);
 			System.out.println("We got the connexion to  " + ServerAddress);
 
-			// wait for 3 seconds before dying
 			PrintWriter Pout = new PrintWriter(socket.getOutputStream());
-			BufferedReader Pin = new BufferedReader(new InputStreamReader(
-					socket.getInputStream()));
+
+			Thread t = new Thread(new ReadServer(socket));
+			t.start();
 
 			String message = "";
-			String response = "";
 
 			while (!message.equals("QUIT")) {
 				message = "";
-				response = "";
 				message = scan.nextLine();
 				Pout.println(message);
 				Pout.flush();
-				while (!response.equals("END OF TRANSMISSION")) {
-					response = Pin.readLine();
-					System.out.println(response);
-				}
 			}
-
 			// Pout.println("REGISTER Xlol password");
 			//
 			// // tell the server that we have finished to talk
