@@ -1,30 +1,48 @@
 package client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.net.Socket;
+import java.util.Date;
+
+import message.Message;
 
 public class ReadServer implements Runnable {
-	private BufferedReader pIn;
+	protected ObjectInputStream inServer;
 	private Socket socket;
 
 	public ReadServer(Socket socket) throws IOException {
-		pIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		inServer = new ObjectInputStream(socket.getInputStream());
 		this.socket = socket;
 	}
 
 	@Override
 	public void run() {
 		try {
+			System.out.println("Thread running");
 
-			String message = "";
-			while (!message.equals("QUIT")) {
-				message = pIn.readLine();
-				System.out.println(message);
+			Object o = "";
+			while (!o.equals("QUIT")) {
+				o = inServer.readObject();
+				if (o instanceof Message) {
+					Message message = (Message) o;
+					StringBuilder sb = new StringBuilder();
+					Date date = new Date(message.getTimestamp());
+					sb.append(date);
+					sb.append(" - ");
+					sb.append(message.getSender());
+					sb.append(" to ");
+					sb.append(message.getReceiver());
+					sb.append(" : ");
+					sb.append(message.getText());
+					System.out.println(sb.toString());
+				} else {
+					System.out.println(o.toString());
+
+				}
 			}
 
-		} catch (IOException e1) {
+		} catch (IOException | ClassNotFoundException e1) {
 
 			e1.printStackTrace();
 		} finally {
@@ -37,5 +55,4 @@ public class ReadServer implements Runnable {
 
 		}
 	}
-
 }

@@ -1,11 +1,13 @@
 package client;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+
+import message.Message;
 
 public class Client {
 
@@ -32,7 +34,8 @@ public class Client {
 			socket = new Socket(ServerAddress, 45000);
 			System.out.println("We got the connexion to  " + ServerAddress);
 
-			PrintWriter Pout = new PrintWriter(socket.getOutputStream());
+			ObjectOutputStream outServer = new ObjectOutputStream(
+					socket.getOutputStream());
 
 			Thread t = new Thread(new ReadServer(socket));
 			t.start();
@@ -42,8 +45,14 @@ public class Client {
 			while (!message.equals("QUIT")) {
 				message = "";
 				message = scan.nextLine();
-				Pout.println(message);
-				Pout.flush();
+				if (message.equals("MESSAGE")) {
+					Message m = new Message("Fitz", "Uki", 0L, "HELLO !");
+					outServer.writeObject(m);
+				} else {
+					outServer.writeObject(message);
+
+				}
+				outServer.flush();
 			}
 			// Pout.println("REGISTER Xlol password");
 			//
@@ -85,6 +94,7 @@ public class Client {
 
 			e.printStackTrace();
 		}
+		scan.close();
 	}
 
 }

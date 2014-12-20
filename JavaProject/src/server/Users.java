@@ -18,18 +18,6 @@ public class Users extends LinkedHashMap<String, User> {
 		}
 	}
 
-	public User get(String username) {
-		return get(username);
-	}
-
-	public boolean containsUsername(String username) {
-		return containsKey(username);
-	}
-
-	public void addUser(User user) {
-		put(user.getName(), user);
-	}
-
 	public Map<String, Boolean> getListForClient() {
 
 		// Only send Username and if the user is connected to the clients
@@ -39,5 +27,9 @@ public class Users extends LinkedHashMap<String, User> {
 		}
 
 		return forClient;
+	}
+
+	public void addUser(User user) {
+		put(user.getName(), user);
 	}
 }

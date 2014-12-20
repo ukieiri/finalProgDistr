@@ -38,25 +38,14 @@ public class UserRunnable implements Runnable {
 		}
 	}
 
-	// overwrite the thread run()
-
-	// Command lines :
-	// CONNECT Username Password
-	// REGISTER Username Password
-	// MESSAGE Username Username Message
-	// RESPONSE Code
-	// GETUSERLIST
-	// PING
-	// PONG
-
 	public void run() {
 		// TODO Perhaps log that we created a new thread or closed it ?
 		if (login())
 			listen();
+		close();
 	}
 
 	private boolean login() {
-
 		try {
 			String name = (String) inClient.readObject();
 			String password;
@@ -141,9 +130,12 @@ public class UserRunnable implements Runnable {
 	}
 
 	private void listen() {
-		while (!mySkClient.isBound() || !mySkClient.isConnected()) {
+		Server.logger.info("Start listening");
+
+		while (mySkClient.isBound() && mySkClient.isConnected()) {
 			try {
 				Object o = inClient.readObject();
+				Server.logger.info("Receiving information");
 
 				if (o instanceof Message) {
 
@@ -154,6 +146,7 @@ public class UserRunnable implements Runnable {
 
 					// TODO log info successfully log out
 					close();
+					return;
 				} else {
 					// TODO log warning cmd send is not know
 					outClient.writeObject("CMD NOT KNOW");
@@ -161,22 +154,29 @@ public class UserRunnable implements Runnable {
 				}
 
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block LOG severe ?
+				Server.logger.info("Stop listening CNFE");
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block LOG severe ?
+				Server.logger.info("Stop listening IOE");
 				e.printStackTrace();
 			}
 
 		}
+		Server.logger.info("Stop listening !bound ! connected");
+
 	}
 
 	private void cmdMessage(Message message) {
-		UserRunnable client = connectedUsers.get(message.getSender());
+		Server.logger.info("Receiving message");
+		UserRunnable client = connectedUsers.get(message.getReceiver());
 		message.setTimestamp(System.currentTimeMillis());
 		if (client != null) {
+			Server.logger.info("Sending message to " + client.user.getName());
+
 			client.send(message);
 		}
+		Server.logger.info("Sending message to " + user.getName());
+
 		send(message);
 
 		MessageReadWrite.write(message);
@@ -191,7 +191,16 @@ public class UserRunnable implements Runnable {
 	}
 
 	private void send(Message message) {
+		try {
+			outClient.writeObject(message);
+			outClient.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
 
+			Server.logger.severe("Couldn't send message IOE");
+
+			e.printStackTrace();
+		}
 	}
 
 	private void close() {
@@ -202,11 +211,17 @@ public class UserRunnable implements Runnable {
 		}
 
 		try {
-			outClient.writeObject("QUIT");
-			outClient.flush();
-			mySkClient.close();
-			inClient.close();
-			outClient.close();
+			if (outClient != null) {
+				outClient.writeObject("QUIT");
+				outClient.flush();
+				outClient.close();
+			}
+			if (inClient != null) {
+				inClient.close();
+			}
+			if (mySkClient != null) {
+				mySkClient.close();
+			}
 			Server.logger.info("Connection closed with "
 					+ mySkClient.toString());
 
