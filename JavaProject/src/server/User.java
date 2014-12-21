@@ -1,6 +1,8 @@
 package server;
 
 import java.io.Serializable;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 public class User implements Serializable {
 	/**
@@ -9,10 +11,8 @@ public class User implements Serializable {
 	private static final long serialVersionUID = 1001L;
 	private String name;
 	private String password;
-	private boolean connected;
 
 	public User(String name, String passwordHash) {
-		connected = false;
 		this.name = name;
 		this.password = passwordHash;
 	}
@@ -25,15 +25,8 @@ public class User implements Serializable {
 		return name;
 	}
 
-	protected String getPassword() {
-		return password;
-	}
-
-	public void setConnected(boolean connected) {
-		this.connected = connected;
-	}
-
-	public boolean getConnected() {
-		return connected;
+	public boolean validatePassword(String triedPassword)
+			throws NoSuchAlgorithmException, InvalidKeySpecException {
+		return PasswordHash.validatePassword(triedPassword, password);
 	}
 }

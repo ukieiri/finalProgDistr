@@ -1,6 +1,5 @@
 package server;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,44 +9,78 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserDBReadWrite {
 
-	static public Users read() {
-		InputStream fileInput = null;
+	private String userDBPath;
 
-		try {
-			fileInput = new FileInputStream(Parameters.pathUserDB);
-
-			ObjectInputStream o = new ObjectInputStream(fileInput);
-
-			while (true) {
-				try {
-					return (Users) o.readObject();
-				} catch (EOFException e) {
-				} finally {
-					o.close();
-				}
+	public UserDBReadWrite(String dbPath) {
+		this.userDBPath = dbPath;
+		File userDB = new File(dbPath);
+		if (!userDB.exists()) {
+			try {
+				userDB.createNewFile();
+				write(new HashMap<String, User>());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} catch (FileNotFoundException e) {
-			// TODO
-			// myLogger.severe("Could not find UserList, creating new one.");
-			// System.err.println("Could not find UserList, creating new one.");
-		} catch (IOException e) {
-			// TODO
-			// myLogger.severe("An error occured, while reading the UserList");
-			// System.err.println("An error occured, while reading the UserList");
-		} catch (ClassNotFoundException e) {
-			// TODO myLogger.severe("UserList.class could not be found");
-			// System.err.println("UserList.class could not be found");
 		}
-
-		// TODO Problem with the Users file / creating a new Users
-		return new Users();
-
 	}
 
-	public static void write(Users users) {
+	@SuppressWarnings({ "unused", "unchecked" })
+	// The check is done by the unused part
+	public Map<String, User> read() {
+		InputStream fileInput = null;
+		Map<String, User> map = null;
+		ObjectInputStream objectInput = null;
+		try {
+			fileInput = new FileInputStream(userDBPath);
+			objectInput = new ObjectInputStream(fileInput);
+			map = (Map<String, User>) objectInput.readObject();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			try {
+				if (fileInput != null)
+					fileInput.close();
+				if (objectInput != null)
+					objectInput.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+
+		// Check that we only have String and users
+		if (map != null) {
+			try {
+				for (String s : map.keySet())
+					;
+				for (User user : map.values()) {
+				}
+			}
+
+			catch (ClassCastException e) {
+				// TODO Log severe problem with the userList We found a non
+				// String/User map !
+				return null;
+			}
+		}
+		return map;
+	}
+
+	public void write(Map<String, User> users) {
 		// if (!directory.exists()) {
 		// if (!directory.mkdirs()) {
 		// myLogger.severe("Error creating Directory");
@@ -56,7 +89,7 @@ public class UserDBReadWrite {
 		// }
 		// }
 
-		File file = new File(Parameters.pathUserDB);
+		File file = new File(userDBPath);
 		OutputStream fileOut = null;
 		try {
 			fileOut = new FileOutputStream(file);

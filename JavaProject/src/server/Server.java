@@ -5,8 +5,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 public class Server {
@@ -22,7 +20,7 @@ public class Server {
 
 	// TODO other version of this if possible.. so bad.Perhaps view the server
 	// has an object.. we will see.
-	private Users users = new Users();
+	private Users users;
 
 	public Server() throws SecurityException, IOException {
 		// Init the logger
@@ -40,15 +38,15 @@ public class Server {
 			MySkServer = new ServerSocket(port, 10, localAddress);
 			// wait for a client connection
 
-			Map<String, UserRunnable> connectedUser = new HashMap<String, UserRunnable>();
+			users = new Users(new UserDBReadWrite(Parameters.pathUserDB));
+
 			while (true) {
 
 				Socket clientSocket = MySkServer.accept();
 
 				logger.info("New Connection "
 						+ clientSocket.getInetAddress().toString());
-				UserRunnable user = new UserRunnable(clientSocket,
-						connectedUser);
+				UserRunnable user = new UserRunnable(clientSocket, users);
 				Thread t = new Thread(user);
 
 				// starting the thread

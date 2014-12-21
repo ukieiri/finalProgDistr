@@ -7,7 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import message.Message;
+import link.Message;
 
 public class Client {
 

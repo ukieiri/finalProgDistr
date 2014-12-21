@@ -7,22 +7,22 @@ import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
-import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
-import message.Message;
+import link.Message;
 
-public class UserRunnable implements Runnable {
+public class UserRunnable implements Runnable, Observer {
 
 	protected Socket mySkClient;
 	protected ObjectInputStream inClient;
 	protected ObjectOutputStream outClient;
-	private User user;
 	private Users users;
-	private Map<String, UserRunnable> connectedUsers;
+	private User user;
 
-	public UserRunnable(Socket cSocket, Map<String, UserRunnable> connectedUsers) {
+	public UserRunnable(Socket cSocket, Users users) {
 		this.mySkClient = cSocket;
-		this.connectedUsers = connectedUsers;
+		this.users = users;
 		try {
 			Server.logger.info("Create output stream with"
 					+ mySkClient.toString());
@@ -50,8 +50,7 @@ public class UserRunnable implements Runnable {
 			String name = (String) inClient.readObject();
 			String password;
 
-			users = UserDBReadWrite.read();
-
+			users.read();
 			// TODO logger.info("User " + name +
 			// " is trying to connect.");
 			if (!users.containsKey(name)) {
@@ -63,19 +62,13 @@ public class UserRunnable implements Runnable {
 
 				password = (String) inClient.readObject();
 				password = PasswordHash.createHash(password);
-				user = new User(name, password);
 
 				// TODO logger.info("User " + user.getName() +
 				// " has been created";
 
-				// Reread because of problem if someone is long to accept
-				// the registration (not the same Users)
-
-				users = UserDBReadWrite.read();
-				users.addUser(user);
-				UserDBReadWrite.write(users);
-
-			} else if (connectedUsers.containsKey(name)) {
+				users.addUser(new User(name, password));
+				users.write();
+			} else if (users.isConnected(name)) {
 				// TODO log warning tried to log with an already used login
 				outClient.writeObject("ALREADYCONNECTED");
 				outClient.flush();
@@ -88,9 +81,7 @@ public class UserRunnable implements Runnable {
 
 			password = (String) inClient.readObject();
 
-			User u = users.get(name);
-
-			if (!PasswordHash.validatePassword(password, u.getPassword())) {
+			if (!users.validatePassword(name, password)) {
 				// Not good password !
 				// TODO log warning ? severe ? tried to log with not a good
 				// password !
@@ -100,10 +91,10 @@ public class UserRunnable implements Runnable {
 				close();
 				return false;
 			}
+
 			// TODO log info successful log !
-			user = u;
-			user.setConnected(true);
-			connectedUsers.put(name, this);
+			user = users.get(name);
+			users.addConnection(user, this);
 			outClient.writeObject("CONNECTED");
 			outClient.flush();
 
@@ -166,9 +157,19 @@ public class UserRunnable implements Runnable {
 
 	}
 
-	private void cmdMessage(Message message) {
+	private void cmdMessage(Message message) throws IOException {
 		Server.logger.info("Receiving message");
-		UserRunnable client = connectedUsers.get(message.getReceiver());
+		if (!user.getName().equals(message.getSender())) {
+			Server.logger.severe(this.toString()
+					+ " tried to send a message with an incorrect sender !");
+			outClient.writeObject("INCORRECTSENDER");
+			outClient.flush();
+
+			// Disconnecting because of trying to write as someone else
+			close();
+			return;
+		}
+		UserRunnable client = users.getConnection(message.getReceiver());
 		message.setTimestamp(System.currentTimeMillis());
 		if (client != null) {
 			Server.logger.info("Sending message to " + client.user.getName());
@@ -205,8 +206,8 @@ public class UserRunnable implements Runnable {
 
 	private void close() {
 		if (user != null) {
-			user.setConnected(false);
-			connectedUsers.remove(user.getName());
+			users.removeConnection(user);
+			user = null;
 			// TODO log.info user disconnected ?
 		}
 
@@ -227,6 +228,22 @@ public class UserRunnable implements Runnable {
 
 		} catch (IOException e) {
 			Server.logger.severe(e.getMessage());
+		}
+	}
+
+	@Override
+	public void update(Observable from, Object object) {
+
+		if (from instanceof Users) {
+			Users liste = (Users) from;
+			try {
+				outClient.writeObject(object);
+				outClient.flush();
+
+			} catch (IOException e) {
+				// TODO log warning / severe can't send update userlist
+			}
+
 		}
 	}
 

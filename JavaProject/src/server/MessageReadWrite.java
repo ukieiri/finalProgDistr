@@ -11,7 +11,7 @@ import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
 
-import message.Message;
+import link.Message;
 
 public class MessageReadWrite {
 
@@ -78,8 +78,6 @@ public class MessageReadWrite {
 		sb.append(message.getReceiver());
 		sb.append(";");
 
-		// replace all the lineSeparator by spaces so it won't be multiple lines
-		// on the system
 		String text = message.getText();
 		sb.append(text);
 

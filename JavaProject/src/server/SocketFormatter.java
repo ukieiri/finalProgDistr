@@ -9,13 +9,11 @@ import java.util.logging.Logger;
 
 public class SocketFormatter extends Formatter {
 
-	public SocketFormatter()
-	{
+	public SocketFormatter() {
 		super();
 	}
 
-	public String format(LogRecord record)
-	{
+	public String format(LogRecord record) {
 
 		// Create a StringBuffer to contain the formatted record
 		StringBuffer sb = new StringBuffer();
@@ -38,9 +36,8 @@ public class SocketFormatter extends Formatter {
 		return sb.toString();
 	}
 
-	public static void initLogger(Logger logger, String filePath) throws SecurityException,
-			IOException
-	{
+	public static void initLogger(Logger logger, String filePath)
+			throws SecurityException, IOException {
 		FileHandler fh;
 		// define a new file handler and its log
 		fh = new FileHandler(filePath, true);

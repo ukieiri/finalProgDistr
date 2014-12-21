@@ -1,35 +1,90 @@
 package server;
 
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Observable;
 
-public class Users extends LinkedHashMap<String, User> {
+public class Users extends Observable {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1000L;
+	private Map<String, User> userMap = new HashMap<String, User>();
+	private Map<String, UserRunnable> connectionMap = new HashMap<String, UserRunnable>();
+	private UserDBReadWrite userDB;
 
-	public void addAll(List<User> read) {
-		// Add value to the map
-		for (User i : read) {
-			put(i.getName(), i);
+	public Users(UserDBReadWrite userDBReadWrite) {
+		userDB = userDBReadWrite;
+	}
+
+	public boolean containsKey(String name) {
+		return userMap.containsKey(name);
+	}
+
+	public User get(String name) {
+		return userMap.get(name);
+	}
+
+	public void read() {
+		userMap = userDB.read();
+		if (userMap == null) {
+			userMap = new HashMap<String, User>();
 		}
 	}
 
-	public Map<String, Boolean> getListForClient() {
+	public void write() {
+		userDB.write(userMap);
+	}
 
-		// Only send Username and if the user is connected to the clients
-		Map<String, Boolean> forClient = new LinkedHashMap<String, Boolean>();
-		for (User i : values()) {
-			forClient.put(i.getName(), i.getConnected());
-		}
+	public boolean isConnected(String name) {
+		return connectionMap.containsKey(userMap.get(name));
+	}
 
-		return forClient;
+	public boolean validatePassword(String user, String password)
+			throws NoSuchAlgorithmException, InvalidKeySpecException {
+		return userMap.get(user).validatePassword(password);
 	}
 
 	public void addUser(User user) {
-		put(user.getName(), user);
+		userMap.put(user.getName(), user);
+		notifyRegisterMap(user, false);
+	}
+
+	public void addConnection(User user, UserRunnable userRunnable) {
+		connectionMap.put(user.getName(), userRunnable);
+
+		notifyRegisterMap(user, true);
+		addObserver(userRunnable);
+		userRunnable.update(this, getRegisterMap());
+	}
+
+	public UserRunnable getConnection(String user) {
+		return connectionMap.get(user);
+	}
+
+	public UserRunnable removeConnection(User user) {
+		UserRunnable removed = connectionMap.remove(user.getName());
+		deleteObserver(removed);
+		notifyRegisterMap(user, false);
+		return removed;
+	}
+
+	private void notifyRegisterMap(User user, boolean connected) {
+		Map<String, Boolean> registerMap = new HashMap<String, Boolean>();
+		registerMap.put(user.getName(), connected);
+		setChanged();
+		notifyObservers(registerMap);
+
+	}
+
+	public Map<String, Boolean> getRegisterMap() {
+		Map<String, Boolean> registerMap = new HashMap<String, Boolean>();
+		for (String name : userMap.keySet()) {
+			registerMap.put(name, false);
+		}
+
+		for (String name : connectionMap.keySet()) {
+			registerMap.put(name, true);
+		}
+		return registerMap;
 	}
 }

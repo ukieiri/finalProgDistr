@@ -5,7 +5,7 @@ import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.util.Date;
 
-import message.Message;
+import link.Message;
 
 public class ReadServer implements Runnable {
 	protected ObjectInputStream inServer;
