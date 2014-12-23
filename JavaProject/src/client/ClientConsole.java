@@ -9,7 +9,7 @@ import java.util.Scanner;
 
 import link.Message;
 
-public class Client {
+public class ClientConsole {
 
 	public static void main(String[] args) {
 
@@ -46,7 +46,7 @@ public class Client {
 				message = "";
 				message = scan.nextLine();
 				if (message.equals("MESSAGE")) {
-					Message m = new Message("Fitz", "Uki", 0L, "HELLO !");
+					Message m = new Message("Fitz", "Uki", 0L, "HELLO \n!");
 					outServer.writeObject(m);
 				} else {
 					outServer.writeObject(message);

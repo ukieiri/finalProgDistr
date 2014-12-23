@@ -80,7 +80,7 @@ public class MessageReadWrite {
 
 		String text = message.getText();
 		sb.append(text);
-
+		sb.append(System.lineSeparator());
 		text = sb.toString();
 
 		write(message.getSender(), message.getReceiver(), text);

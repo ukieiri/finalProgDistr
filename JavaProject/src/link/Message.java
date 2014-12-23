@@ -12,6 +12,10 @@ public class Message implements Serializable {
 	private long timestamp;
 	private String text;
 
+	public Message(String sender, String receiver, String text) {
+		this(sender, receiver, 0L, text);
+	}
+
 	public Message(String sender, String receiver, long timestamp, String text) {
 		// replace all the lineSeparator by spaces so it won't be multiple lines
 		// on the system
@@ -19,9 +23,9 @@ public class Message implements Serializable {
 		this.sender = sender;
 		this.receiver = receiver;
 		this.timestamp = timestamp;
-		text.replaceAll(System.lineSeparator(), " ");
-		text.trim();
-		text += System.lineSeparator();
+		text = text.replaceAll("\n", "");
+		text = text.replaceAll(System.lineSeparator(), "");
+		text = text.trim();
 		this.text = text;
 	}
 

@@ -31,6 +31,8 @@ public class UserRunnable implements Runnable, Observer {
 			Server.logger.info("Create input stream with"
 					+ mySkClient.toString());
 			inClient = new ObjectInputStream(mySkClient.getInputStream());
+			outClient.writeObject("CONNECTED");
+			outClient.flush();
 		} catch (IOException e) {
 			Server.logger.warning(e.toString());
 			close();
@@ -53,6 +55,13 @@ public class UserRunnable implements Runnable, Observer {
 			users.read();
 			// TODO logger.info("User " + name +
 			// " is trying to connect.");
+			if (!name.matches(("[a-zA-Z]+"))) {
+				outClient.writeObject("ONLYALPHABET");
+				outClient.flush();
+
+				return false;
+			}
+
 			if (!users.containsKey(name)) {
 				outClient.writeObject("REGISTER");
 				outClient.flush();
@@ -94,9 +103,10 @@ public class UserRunnable implements Runnable, Observer {
 
 			// TODO log info successful log !
 			user = users.get(name);
-			users.addConnection(user, this);
-			outClient.writeObject("CONNECTED");
+			outClient.writeObject("ACCEPTED " + name);
 			outClient.flush();
+
+			users.addConnection(user, this);
 
 			sendAllMessages();
 
@@ -132,9 +142,6 @@ public class UserRunnable implements Runnable, Observer {
 
 					cmdMessage((Message) o);
 				} else if (o.toString().equals("LOGOUT")) {
-					outClient.writeObject("LOGOUT");
-					outClient.flush();
-
 					// TODO log info successfully log out
 					close();
 					return;
@@ -235,7 +242,6 @@ public class UserRunnable implements Runnable, Observer {
 	public void update(Observable from, Object object) {
 
 		if (from instanceof Users) {
-			Users liste = (Users) from;
 			try {
 				outClient.writeObject(object);
 				outClient.flush();

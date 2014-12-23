@@ -8,6 +8,7 @@ import java.util.Date;
 import link.Message;
 
 public class ReadServer implements Runnable {
+
 	protected ObjectInputStream inServer;
 	private Socket socket;
 

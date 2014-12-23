@@ -35,6 +35,7 @@ public class Server {
 		try {
 			// Create the server socket and listen to the port
 			localAddress = InetAddress.getLocalHost();
+			System.out.println(localAddress);
 			MySkServer = new ServerSocket(port, 10, localAddress);
 			// wait for a client connection
 
@@ -47,6 +48,7 @@ public class Server {
 				logger.info("New Connection "
 						+ clientSocket.getInetAddress().toString());
 				UserRunnable user = new UserRunnable(clientSocket, users);
+
 				Thread t = new Thread(user);
 
 				// starting the thread
