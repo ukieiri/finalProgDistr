@@ -304,8 +304,7 @@ public class UserRunnable implements Runnable, Observer {
 				mySkClient.close();
 				mySkClient = null;
 			}
-			Server.logger.info("Connection closed with "
-					+ mySkClient.toString());
+			Server.logger.info("Connection closed");
 
 		} catch (IOException e) {
 			// if the streams/socket where already closed
