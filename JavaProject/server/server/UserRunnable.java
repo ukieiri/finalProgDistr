@@ -13,24 +13,32 @@ import java.util.Observer;
 import link.Message;
 
 public class UserRunnable implements Runnable, Observer {
-
-	protected Socket mySkClient;
-	protected ObjectInputStream inClient;
-	protected ObjectOutputStream outClient;
-	private Users users;
+	private volatile Thread listener; // equals currentThread while running
+	// null if the thread is stopped
+	private Socket mySkClient;
+	private ObjectInputStream inClient;
+	private ObjectOutputStream outClient;
 	private User user;
+	private MessageReadWrite messageReadWrite;
+	private Server server;
 
-	public UserRunnable(Socket cSocket, Users users) {
+	public UserRunnable(Socket cSocket, Server server) {
 		this.mySkClient = cSocket;
-		this.users = users;
+		this.server = server;
 		try {
 			Server.logger.info("Create output stream with"
 					+ mySkClient.toString());
+
+			// Create the output steam
 			outClient = new ObjectOutputStream(mySkClient.getOutputStream());
 
 			Server.logger.info("Create input stream with"
 					+ mySkClient.toString());
+
+			// Create the input steam
 			inClient = new ObjectInputStream(mySkClient.getInputStream());
+
+			// Send a connection verification
 			outClient.writeObject("CONNECTED");
 			outClient.flush();
 		} catch (IOException e) {
@@ -41,43 +49,43 @@ public class UserRunnable implements Runnable, Observer {
 	}
 
 	public void run() {
+		listener = Thread.currentThread();
 		// TODO Perhaps log that we created a new thread or closed it ?
+		// if the client successfully log in, then listen to him
+		// finally close the connection
 		if (login())
 			listen();
 		close();
 	}
 
+	// Used to log in a client as a user
 	private boolean login() {
 		try {
+			// Read the first object send by the client, should be the username
 			String name = (String) inClient.readObject();
 			String password;
-
-			users.read();
+			Users users = server.getUserlist();
+			Parameters parameters = server.getParameters();
 			// TODO logger.info("User " + name +
 			// " is trying to connect.");
-			if (!name.matches(("[a-zA-Z]+"))) {
+
+			// Make sure the user name only contain legal characters
+			if (!name.matches((parameters.getUserMatch()))) {
 				outClient.writeObject("ONLYALPHABET");
 				outClient.flush();
 
 				return false;
 			}
 
+			users.read(); // make sure the users is up to date
+			// if we don't have this username, we need to register it
 			if (!users.containsKey(name)) {
-				outClient.writeObject("REGISTER");
-				outClient.flush();
-
-				// TODO logger.info("User " + user.getName() +
-				// " does not exist.";
-
-				password = (String) inClient.readObject();
-				password = PasswordHash.createHash(password);
-
-				// TODO logger.info("User " + user.getName() +
-				// " has been created";
-
-				users.addUser(new User(name, password));
-				users.write();
+				register(name);
 			} else if (users.isConnected(name)) {
+				// Cannot connect if the user is already connected
+				// TODO add the possibility to disconnect the currently login
+				// client / perhaps a parameter ?
+
 				// TODO log warning tried to log with an already used login
 				outClient.writeObject("ALREADYCONNECTED");
 				outClient.flush();
@@ -85,32 +93,47 @@ public class UserRunnable implements Runnable, Observer {
 				return false;
 			}
 
+			// Send that we now want the password
 			outClient.writeObject("PASSWORD");
 			outClient.flush();
 
 			password = (String) inClient.readObject();
 
-			if (!users.validatePassword(name, password)) {
-				// Not good password !
-				// TODO log warning ? severe ? tried to log with not a good
-				// password !
-				outClient.writeObject("FALSE");
-				outClient.flush();
+			try {
+				// ask if the password is correct
+				if (users.validatePassword(name, password)) {
+					// TODO log info successful log !
+					user = users.get(name);
 
-				close();
-				return false;
+					// send a validation of the connection
+					outClient.writeObject("ACCEPTED " + name);
+					outClient.flush();
+
+					// add the user to the connected list
+					users.addConnection(user, this);
+
+					// create the user message reader
+					this.messageReadWrite = new MessageReadWrite(user,
+							parameters);
+					// send the user all his messages
+					sendAllMessages();
+
+					return true;
+
+				}
+			} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+				// TODO LOG ? Auto-generated catch block
+				e.printStackTrace();
 			}
-
-			// TODO log info successful log !
-			user = users.get(name);
-			outClient.writeObject("ACCEPTED " + name);
+			// Not good password or there is a problem with the algo !
+			// Either way, refuse the connection
+			// TODO log warning ? severe ? tried to log with not a good
+			// password !
+			outClient.writeObject("FALSE");
 			outClient.flush();
 
-			users.addConnection(user, this);
-
-			sendAllMessages();
-
-			return true;
+			close();
+			return false;
 
 		} catch (IOException e) {
 			// TODO logger ?
@@ -118,86 +141,133 @@ public class UserRunnable implements Runnable, Observer {
 		} catch (ClassNotFoundException e) {
 			// TODO logger ?
 			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO logger ? problem in the password creation severe
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
-			// TODO logger ? problem in the password creation severe
-			e.printStackTrace();
 		}
-
 		close();
 		return false;
 	}
 
-	private void listen() {
-		Server.logger.info("Start listening");
+	// Handle the registration of a new user by a client
+	private void register(String name) throws IOException,
+			ClassNotFoundException {
+		Users users = server.getUserlist();
 
-		while (mySkClient.isBound() && mySkClient.isConnected()) {
+		// Message that we need to register a new user
+		outClient.writeObject("REGISTER");
+		outClient.flush();
+
+		// TODO logger.info("User " + user.getName() +
+		// " does not exist.";
+
+		// Receiving password
+		String password = (String) inClient.readObject();
+
+		// TODO logger.info("User " + user.getName() +
+		// " has been created";
+
+		// create the new user
+		users.addUser(name, password);
+	}
+
+	// Listen to the user connection
+	private void listen() {
+		Server.logger.info(user.getName() + " : Start listening");
+		Thread thisThread = Thread.currentThread();
+
+		// while the connection is still bound and connected and the Server
+		// didn't ask for the end of this thread (listener will become null)
+		while (mySkClient.isBound() && mySkClient.isConnected()
+				&& thisThread == listener) {
 			try {
 				Object o = inClient.readObject();
-				Server.logger.info("Receiving information");
+				// Read what the client is sending
+
+				Server.logger.info(user.getName() + " : Receiving information");
 
 				if (o instanceof Message) {
-
+					// the client sent a message
 					cmdMessage((Message) o);
 				} else if (o.toString().equals("LOGOUT")) {
+					// the client asked to disconnect
 					// TODO log info successfully log out
 					close();
 					return;
 				} else {
+					// The client send meaningless information
 					// TODO log warning cmd send is not know
 					outClient.writeObject("CMD NOT KNOW");
 					outClient.flush();
 				}
 
 			} catch (ClassNotFoundException e) {
-				Server.logger.info("Stop listening CNFE");
+				// We don't know what the client just send to us
+
+				// TODO LOG
 				e.printStackTrace();
 			} catch (IOException e) {
-				Server.logger.info("Stop listening IOE");
+				// TODO LOG
 				e.printStackTrace();
 			}
 
 		}
-		Server.logger.info("Stop listening !bound ! connected");
 
 	}
 
+	// Handle the reception of a message from the client
 	private void cmdMessage(Message message) throws IOException {
-		Server.logger.info("Receiving message");
+		Server.logger.info(user.getName() + " : Receiving message");
+
+		// Control that the client's user and the message's sender are the same
 		if (!user.getName().equals(message.getSender())) {
-			Server.logger.severe(this.toString()
-					+ " tried to send a message with an incorrect sender !");
+			Server.logger.severe(user.getName()
+					+ " : tried to send a message with an incorrect sender !");
 			outClient.writeObject("INCORRECTSENDER");
 			outClient.flush();
 
-			// Disconnecting because of trying to write as someone else
-			close();
 			return;
 		}
-		UserRunnable client = users.getConnection(message.getReceiver());
+
+		// Control that the message's receiver exist
+		if (!server.getUserlist().containsKey(message.getReceiver())) {
+			Server.logger.severe(user.getName()
+					+ " : tried to send a message to an non existant user !");
+			outClient.writeObject("INCORRECTSENDER");
+			outClient.flush();
+			return;
+		}
+
+		// get the runnable of the other client
+		UserRunnable client = server.getUserlist().getConnection(
+				message.getReceiver());
+
+		// set the time stamp to the current ms
 		message.setTimestamp(System.currentTimeMillis());
+
+		// if the receiver is connected, send him the message
 		if (client != null) {
-			Server.logger.info("Sending message to " + client.user.getName());
+			Server.logger.info(user.getName() + " : Sending message to "
+					+ client.user.getName());
 
 			client.send(message);
 		}
-		Server.logger.info("Sending message to " + user.getName());
+		Server.logger.info(user.getName() + " : Sending message to "
+				+ user.getName());
 
+		// send the message to the sender
 		send(message);
 
-		MessageReadWrite.write(message);
+		// finally write the message in the file database
+		messageReadWrite.write(message);
 	}
 
+	// Send all the message of this user
 	private void sendAllMessages() {
-
-		List<Message> messages = MessageReadWrite.read(user);
+		List<Message> messages = messageReadWrite.read();
 		for (Message m : messages) {
 			send(m);
 		}
 	}
 
+	// Send a message to this user
 	private void send(Message message) {
 		try {
 			outClient.writeObject(message);
@@ -211,37 +281,43 @@ public class UserRunnable implements Runnable, Observer {
 		}
 	}
 
+	// Close the connection
 	private void close() {
 		if (user != null) {
-			users.removeConnection(user);
+			// Remove the connection from the connectedList
+			server.getUserlist().removeConnection(user);
 			user = null;
 			// TODO log.info user disconnected ?
 		}
 
-		try {
+		try { // Close all the stream / socket
 			if (outClient != null) {
-				outClient.writeObject("QUIT");
-				outClient.flush();
 				outClient.close();
+				outClient = null;
 			}
 			if (inClient != null) {
 				inClient.close();
+				inClient = null;
+
 			}
 			if (mySkClient != null) {
 				mySkClient.close();
+				mySkClient = null;
 			}
 			Server.logger.info("Connection closed with "
 					+ mySkClient.toString());
 
 		} catch (IOException e) {
-			Server.logger.severe(e.getMessage());
+			// if the streams/socket where already closed
+			Server.logger.warning(e.getMessage());
 		}
 	}
 
 	@Override
 	public void update(Observable from, Object object) {
-
+		// Update from an observable
 		if (from instanceof Users) {
+			// Should be only from Users to signal a change in the userList
 			try {
 				outClient.writeObject(object);
 				outClient.flush();
@@ -251,6 +327,22 @@ public class UserRunnable implements Runnable, Observer {
 			}
 
 		}
+	}
+
+	// Stop this thread safely
+	public void stop() {
+		listener = null;
+		try {
+			if (outClient != null) {
+				outClient.writeObject("QUIT");
+				outClient.flush();
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace(); // should happen only if the connection was
+									// already closed
+		}
+
 	}
 
 }

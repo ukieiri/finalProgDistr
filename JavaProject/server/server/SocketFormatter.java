@@ -1,5 +1,6 @@
 package server;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.logging.FileHandler;
@@ -36,11 +37,14 @@ public class SocketFormatter extends Formatter {
 		return sb.toString();
 	}
 
-	public static void initLogger(Logger logger, String filePath)
+	public static void initLogger(Logger logger, String folderPath)
 			throws SecurityException, IOException {
+
+		File folder = new File(folderPath);
+		folder.mkdirs();
 		FileHandler fh;
 		// define a new file handler and its log
-		fh = new FileHandler(filePath, true);
+		fh = new FileHandler(folderPath + "log.log", true);
 
 		// add the handle to the log
 		logger.addHandler(fh);

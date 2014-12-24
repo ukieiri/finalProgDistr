@@ -27,9 +27,9 @@ public class Client {
 	private String username;
 
 	public Client() {
+		Thread tShutdown = new ShutdownHook();
+		Runtime.getRuntime().addShutdownHook(tShutdown);
 		frame = new ConnectionFrame(this);
-		Thread t_shutdown = new ShutdownHook();
-		Runtime.getRuntime().addShutdownHook(t_shutdown);
 	}
 
 	public static void main(String[] args) {
@@ -105,18 +105,33 @@ public class Client {
 			startChatFrame();
 
 		} catch (UnknownHostException e) {
-			displayError(e);
+			displayException(e);
 		} catch (IOException e) {
-			displayError(e);
+			displayException(e);
 		} catch (ClassNotFoundException e) {
-			displayError(e);
+			displayException(e);
 		}
 
 	}
 
-	public void displayError(Exception e) {
+	public void displayException(Exception e) {
 		JOptionPane.showMessageDialog(frame, e.getMessage());
 
+	}
+
+	public void displayString(String e) {
+		JOptionPane.showMessageDialog(frame, e);
+
+	}
+
+	public void send(Message message) {
+		try {
+			outServer.writeObject(message);
+			outServer.flush();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			displayException(e);
+		}
 	}
 
 	class ShutdownHook extends Thread {
@@ -127,30 +142,23 @@ public class Client {
 			if (reader != null)
 				reader.stop();
 			try {
-				if (outServer != null) {
-					outServer.writeObject("LOGOUT");
-					outServer.flush();
-					outServer.close();
-				}
-				if (inServer != null)
-					inServer.close();
-
-				if (socket != null)
+				if (socket != null && !socket.isClosed()) {
+					if (outServer != null) {
+						outServer.writeObject("LOGOUT");
+						outServer.flush();
+						outServer.close();
+					}
+					if (inServer != null)
+						inServer.close();
 
 					socket.close();
+
+				}
+
 			} catch (IOException e) {
-				e.printStackTrace();
+				// The server was already shutdown
 			}
 		}
 	}
 
-	public void send(Message message) {
-		try {
-			outServer.writeObject(message);
-			outServer.flush();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			displayError(e);
-		}
-	}
 }

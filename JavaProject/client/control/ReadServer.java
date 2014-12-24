@@ -21,23 +21,27 @@ public class ReadServer extends Observable implements Runnable {
 	@Override
 	public void run() {
 		try {
-			System.out.println("Thread running");
 			reader = Thread.currentThread();
 			Thread thisThread = Thread.currentThread();
 			Object o = "";
-			while (!o.equals("QUIT") && reader == thisThread) {
+			while (reader == thisThread) {
 				o = inServer.readObject();
+				if (o.equals("QUIT")) {
+					client.displayString("Server is shutting down. Shut down of the client.");
+					System.exit(0);
+				}
 				if (o instanceof Message || o instanceof Map) {
 					setChanged();
 					notifyObservers(o);
-
+					continue;
 				}
-				System.out.println(o.toString());
+				client.displayString(o.toString());
 			}
 
 		} catch (IOException | ClassNotFoundException e) {
-			client.displayError(e);
+			client.displayException(e);
 		}
+
 	}
 
 	public void stop() {
