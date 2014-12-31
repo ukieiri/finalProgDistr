@@ -69,8 +69,8 @@ public class UserRunnable implements Runnable, Observer {
 			String password;
 			Users users = server.getUserlist();
 			Parameters parameters = server.getParameters();
-			// TODO logger.info("User " + name +
-			// " is trying to connect.");
+			 logger.info("User " + name +
+			 " is trying to connect.");
 
 			// Make sure the user name only contain legal characters
 			if (!name.matches((parameters.getUserMatch()))) {
@@ -90,6 +90,7 @@ public class UserRunnable implements Runnable, Observer {
 				// client / perhaps a parameter ?
 
 				// TODO log warning tried to log with an already used login
+				logger.warning(name + "tried to log with an already used login");
 				outClient.writeObject("ALREADYCONNECTED");
 				outClient.flush();
 				close();

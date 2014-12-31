@@ -1,5 +1,4 @@
 package server;
-import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -18,28 +17,26 @@ public class Logging {
 	public Logging() {		
 		logger = Logger.getLogger("./"+dateNow+"_server.csv");	
 		init_Logger();
-	//	}
 	}
 
-	public void close() {
+	public void close() {}
 
-	}
+	public void init_Logger() {		
+	    //define and add handler into log
+			FileHandler fh;
+			try {			
+				fh = new FileHandler("./"+dateNow+"_server.csv", true);
+				logger.addHandler(fh);
 
-	public void init_Logger() {
-		// define and add handler into log
-		FileHandler fh;
-		try {
-			fh = new FileHandler("./"+dateNow+"_server.csv", true);
-			logger.addHandler(fh);
-
-			// apply a custom formatter
-			SocketFormatter myFormatter = new SocketFormatter();
-			fh.setFormatter(myFormatter);
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+				// apply a custom formatter
+				SocketFormatter myFormatter = new SocketFormatter();
+				fh.setFormatter(myFormatter);
+			} catch (SecurityException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		
 	}
 
 	public static class SocketFormatter extends Formatter {

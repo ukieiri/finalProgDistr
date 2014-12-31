@@ -7,9 +7,9 @@ import java.net.Socket;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
+import server.Logging;
 
 public class Server {
-	//public final static Logger logger = Logger.getLogger("Server");
 	private Logging logging = new Logging();
 	private Logger logger = logging.getCustomLogger();
 	private Users users;
@@ -27,22 +27,11 @@ public class Server {
 		// Load settings of the server
 		parameters = new Parameters("settings.cfg");
 
-		// TODO logger that changes every months
-		try {
-			SocketFormatter.initLogger(logger, parameters.getPathLog());
-		} catch (SecurityException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
 		logger.info("*** Start of server ***");
 		try {
 			// Create the server socket and listen to the port
 			localAddress = InetAddress.getLocalHost();
-			logger.info(localAddress.toString());
+			logger.info("Server: " + localAddress.toString());
 
 			// Start listening to the port
 			MySkServer = new ServerSocket(parameters.getPort(),
@@ -90,17 +79,19 @@ public class Server {
 	}
 
 	class ShutdownHook extends Thread {
-		// TODO Log shutdown ?
 		// assure that we shutdown the connection with the server and the
 		// threads
 		public void run() {
-			// Stop all the current connections
+			// Stop all current connections
 			if (users != null)
+			{
 				users.stop();
-			// Stop the scanner listener thread
+			}
+			// Stop scanner listener thread
 			if (tScanner != null)
+			{
 				tScanner.stop();
-
+			}
 			// Close all the log files
 			if (logger != null) {
 				for (Handler handler : logger.getHandlers()) {

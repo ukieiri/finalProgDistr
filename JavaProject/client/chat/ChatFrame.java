@@ -76,6 +76,7 @@ public class ChatFrame extends JFrame implements Observer {
 
 		@Override
 		public void valueChanged(ListSelectionEvent event) {
+			@SuppressWarnings("rawtypes")
 			String selected = (String) ((JList) event.getSource())
 					.getSelectedValue();
 			if (!mapTab.containsKey(selected)) {

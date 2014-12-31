@@ -14,7 +14,6 @@ import javax.swing.JOptionPane;
 import link.Message;
 import chat.ChatFrame;
 import connection.ConnectionFrame;
-import connection.RegisterDialog;
 
 public class Client {
 
@@ -48,7 +47,6 @@ public class Client {
 			t.start();
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -71,7 +69,6 @@ public class Client {
 						"Couldn't connect to the server");
 				return;
 			}
-
 			outServer.writeObject(username);
 			String response = inServer.readObject().toString();
 			if (response.equals("ONLYALPHABET")) {
@@ -86,18 +83,16 @@ public class Client {
 
 			}
 			if (response.equals("REGISTER")) {
-				RegisterDialog o = new RegisterDialog();
-				outServer.writeObject(o.showModal());
-				outServer.flush();
-				response = inServer.readObject().toString();
-
+				JOptionPane.showMessageDialog(frame,
+						"User does not exist yet. Please register.");
+				return;
 			}
 			outServer.writeObject(password);
 			response = inServer.readObject().toString();
 
 			if (response.equals("FALSE")) {
 				JOptionPane.showMessageDialog(frame,
-						"False username/password. Disconnecting");
+						"Username or password is incorrect. Disconnecting");
 				return;
 			}
 
@@ -113,7 +108,26 @@ public class Client {
 		}
 
 	}
+	
+	public void registerUser(String username, String password, String repassword, String port, String address) throws IOException, ClassNotFoundException{
+		serverAddress = InetAddress.getByName(address);
+		socket = new Socket(serverAddress, Integer.parseInt(port));
+		outServer = new ObjectOutputStream(this.socket.getOutputStream());
+		inServer = new ObjectInputStream(this.socket.getInputStream());
+		
+		outServer.writeObject(username);
+		String response = inServer.readObject().toString();	
+		outServer.writeObject(password);
+		response = inServer.readObject().toString();
 
+		if (response.equals("FALSE")) {
+			JOptionPane.showMessageDialog(frame,
+					"False username/password. Disconnecting");
+			return;
+		}	
+		JOptionPane.showMessageDialog(frame, "User " + username + " registered successfully");
+	}
+	
 	public void displayException(Exception e) {
 		JOptionPane.showMessageDialog(frame, e.getMessage());
 
@@ -133,7 +147,7 @@ public class Client {
 			displayException(e);
 		}
 	}
-
+	
 	class ShutdownHook extends Thread {
 
 		// assure that we shut down the connection with the server

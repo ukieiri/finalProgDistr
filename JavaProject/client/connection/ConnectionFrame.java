@@ -11,20 +11,17 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
 import control.Client;
+import connection.RegisterFrame;
 
 public class ConnectionFrame extends JFrame {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
-	private JTextField address = new JTextField("192.168.1.103");
+	private JTextField address = new JTextField("192.168.108.12");
 	private JTextField port = new JTextField("45000");
-	private JTextField username = new JTextField("Fitz");
-	private JTextField password = new JPasswordField("password");
+	private JTextField username = new JTextField("Uki");
+	private JTextField password = new JPasswordField("7014085");
 
 	private JButton connect = new JButton("Connect");
-
+	private JButton register = new JButton("Register");
 	private Client client;
 
 	public ConnectionFrame(Client client) {
@@ -35,7 +32,7 @@ public class ConnectionFrame extends JFrame {
 
 		setLocationRelativeTo(null);
 		setResizable(false);
-		setLayout(new GridLayout(5, 2, 5, 5));
+		setLayout(new GridLayout(6, 2, 5, 5));
 
 		add(new JLabel("Hostname : "));
 		add(address);
@@ -50,10 +47,14 @@ public class ConnectionFrame extends JFrame {
 		add(password);
 
 		add(new JLabel());
+		add(register);
+		
+		add(new JLabel());
 		add(connect);
 
 		connect.addActionListener(new ConnectListener());
-		setSize(410, 256);
+		register.addActionListener(new RegisterListener());
+		setSize(410, 306);
 		setVisible(true);
 	}
 
@@ -63,6 +64,14 @@ public class ConnectionFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			client.connect(address.getText(), port.getText(),
 					username.getText(), password.getText());
+		}
+	}
+	class RegisterListener implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			RegisterFrame frame = new RegisterFrame(client, port.getText(), address.getText());
+			frame.pack();
+			frame.setVisible(true);
 		}
 	}
 }
