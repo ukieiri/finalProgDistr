@@ -22,10 +22,10 @@ public class UserRunnable implements Runnable, Observer {
 	private User user;
 	private MessageReadWrite messageReadWrite;
 	private Server server;
-	private Logging logging = new Logging();
-	private Logger logger = logging.getCustomLogger();
+	private Logger logger;
 
-	public UserRunnable(Socket cSocket, Server server) {
+	public UserRunnable(Socket cSocket, Server server, Logger logger) {
+		this.logger = logger;
 		this.mySkClient = cSocket;
 		this.server = server;
 		try {
@@ -118,7 +118,7 @@ public class UserRunnable implements Runnable, Observer {
 
 					// create the user message reader
 					this.messageReadWrite = new MessageReadWrite(user,
-							parameters);
+							parameters, logger);
 					// send the user all his messages
 					sendAllMessages();
 

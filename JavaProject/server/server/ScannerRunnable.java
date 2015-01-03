@@ -5,16 +5,16 @@ import java.util.logging.Logger;
 
 public class ScannerRunnable implements Runnable {
 	private Scanner scan = new Scanner(System.in);
-	private Logging logging = new Logging();
-	private Logger logger = logging.getCustomLogger();
+	private Logger logger;
 	// Stop system
 	private volatile Thread listener;
 
 	// Parent
 	private Server server;
 
-	public ScannerRunnable(Server server) {
+	public ScannerRunnable(Server server, Logger logger) {
 		this.server = server;
+		this.logger= logger;
 	}
 
 	public void run() {

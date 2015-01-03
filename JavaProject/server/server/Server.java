@@ -11,7 +11,7 @@ import server.Logging;
 
 public class Server {
 	private Logging logging = new Logging();
-	private Logger logger = logging.getCustomLogger();
+	private Logger logger;
 	private Users users;
 	private ScannerRunnable tScanner;
 	private Parameters parameters;
@@ -19,6 +19,8 @@ public class Server {
 	public Server() {
 		InetAddress localAddress;
 		ServerSocket MySkServer;
+		
+		logger = logging.getCustomLogger();
 
 		// Init the shutdown hook to assure the closure of connection/thread/...
 		Thread tShutdown = new ShutdownHook();
@@ -41,7 +43,7 @@ public class Server {
 			users = new Users(new UserDBReadWrite(parameters.getPathUserDB()));
 
 			// Create and start the scanner listener (admin command)
-			ScannerRunnable tScanner = new ScannerRunnable(this);
+			ScannerRunnable tScanner = new ScannerRunnable(this, logger);
 			Thread t = new Thread(tScanner);
 			t.start();
 
@@ -54,7 +56,7 @@ public class Server {
 						+ clientSocket.getInetAddress().toString());
 
 				// Create and start a new thread for a new client
-				UserRunnable user = new UserRunnable(clientSocket, this);
+				UserRunnable user = new UserRunnable(clientSocket, this, logger);
 				t = new Thread(user);
 				t.start();
 			}

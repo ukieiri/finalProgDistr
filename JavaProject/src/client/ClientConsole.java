@@ -54,34 +54,6 @@ public class ClientConsole {
 				}
 				outServer.flush();
 			}
-			// Pout.println("REGISTER Xlol password");
-			//
-			// // tell the server that we have finished to talk
-			// Pout.println("");
-			// Pout.flush();
-			//
-			// Pout.println("CONNECT Test password");
-			// Pout.println("");
-			// Pout.flush();
-			//
-			// Pout.println("GETUSERLIST");
-			// Pout.println("");
-			// Pout.flush();
-			//
-			// Pout.println("WHOAMI");
-			// Pout.println("");
-			// Pout.flush();
-			//
-			// while (!message.equals("QUIT")) {
-			// message = Pin.readLine();
-			// System.out.println(message);
-			// }
-			//
-			//
-			// Pout.println("QUIT");
-			// Pout.println("");
-			// Pout.flush();
-			// // Then die
 
 			System.out.println("now dying....");
 

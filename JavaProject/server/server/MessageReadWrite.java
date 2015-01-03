@@ -17,10 +17,10 @@ import link.Message;
 public class MessageReadWrite {
 	private User user;
 	private Parameters parameters;
-	private Logging logging = new Logging();
-	private Logger logger = logging.getCustomLogger();
+	private Logger logger;
 
-	public MessageReadWrite(User user, Parameters parameters) {
+	public MessageReadWrite(User user, Parameters parameters, Logger logger) {
+		this.logger = logger;
 		this.user = user;
 		this.parameters = parameters;
 	}
