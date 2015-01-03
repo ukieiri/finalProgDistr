@@ -122,7 +122,7 @@ public class Client {
 
 		if(response.equals("PASSWORD")){
 			JOptionPane.showMessageDialog(frame,
-					"User already exists. Please, try another username");
+					"User already exists. Please, choose another username");
 			return;			
 		}
 		if (response.equals("FALSE")) {

@@ -3,6 +3,8 @@ package chat;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -37,7 +39,9 @@ public class MessagePanel extends JPanel {
 		south.add(send, BorderLayout.EAST);
 		send.addActionListener(new SendListener());
 		add(south, BorderLayout.SOUTH);
-
+		writing.setFocusable(true);
+		writing.requestFocusInWindow();
+		writing.addKeyListener(new KeySendListener());				
 	}
 
 	class SendListener implements ActionListener {
@@ -50,7 +54,26 @@ public class MessagePanel extends JPanel {
 			writing.setText("");
 		}
 	}
+	class KeySendListener implements KeyListener{
+		public void keyReleased( KeyEvent e )
+		{
+		if( e.getKeyCode() == KeyEvent.VK_ENTER )
+		{
+			if (!writing.getText().isEmpty())
+				client.send(new Message(client.getUsername(), user, writing
+						.getText()));
+			writing.setText("");
+		}
+		}
 
+		@Override
+		public void keyPressed(KeyEvent arg0) {
+		}
+
+		@Override
+		public void keyTyped(KeyEvent arg0) {
+		}
+	}
 	public void display(Message message) {
 		StringBuilder sb = new StringBuilder();
 		Date date = new Date(message.getTimestamp());
