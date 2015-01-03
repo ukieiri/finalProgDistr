@@ -28,10 +28,18 @@ public class RegisterFrame extends JDialog {
 	public RegisterFrame(Client client, String port, String address) {		
 		this.client = client;
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		//to keep values of port and address but hide them
+				portHidden = new JTextField(port);
+				addressHidden = new JTextField(address);
+				portHidden.setVisible(false);
+				addressHidden.setVisible(false);		
+		
 		setTitle("Register new User : ");
 		setLocationRelativeTo(null);
 		setResizable(false);		
 		setLayout(new GridLayout(6, 2, 5, 5));
+		add(portHidden);
+		add(new JLabel());
 		JButton register = new JButton("Register");
 		add(new JLabel("Username : "));
 		add(username);
@@ -39,19 +47,12 @@ public class RegisterFrame extends JDialog {
 		add(password);
 		add(new JLabel("Retype Password : "));
 		add(repassword);
-		
+		add(new JLabel());
 		add(register, BorderLayout.WEST);
 		register.addActionListener(new Button_Click());
-		
-		//to keep values of port and address but hide them
-		portHidden = new JTextField(port);
-		addressHidden = new JTextField(address);
-		portHidden.setVisible(false);
-		addressHidden.setVisible(false);
-		add(portHidden);
 		add(addressHidden);		
 		
-		setSize(410, 180);
+		setSize(410, 220);
 		setVisible(true);
 	}
 

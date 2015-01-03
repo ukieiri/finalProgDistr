@@ -32,8 +32,7 @@ public class ConnectionFrame extends JFrame {
 
 		setLocationRelativeTo(null);
 		setResizable(false);
-		setLayout(new GridLayout(6, 2, 5, 5));
-
+		setLayout(new GridLayout(5, 2, 5, 5));
 		add(new JLabel("Hostname : "));
 		add(address);
 
@@ -45,16 +44,13 @@ public class ConnectionFrame extends JFrame {
 
 		add(new JLabel("Password : "));
 		add(password);
-
-		add(new JLabel());
-		add(register);
 		
-		add(new JLabel());
+		add(register);		
 		add(connect);
 
 		connect.addActionListener(new ConnectListener());
 		register.addActionListener(new RegisterListener());
-		setSize(410, 306);
+		setSize(410, 246);
 		setVisible(true);
 	}
 
