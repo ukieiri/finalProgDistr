@@ -17,8 +17,8 @@ public class ConnectionFrame extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private JTextField address = new JTextField("192.168.108.12");
 	private JTextField port = new JTextField("45000");
-	private JTextField username = new JTextField("Uki");
-	private JTextField password = new JPasswordField("7014085");
+	private JTextField username = new JTextField("");
+	private JTextField password = new JPasswordField("");
 
 	private JButton connect = new JButton("Connect");
 	private JButton register = new JButton("Register");

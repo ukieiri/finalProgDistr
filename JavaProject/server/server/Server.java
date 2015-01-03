@@ -40,7 +40,7 @@ public class Server {
 					parameters.getBacklog(), localAddress);
 
 			// Create the user list
-			users = new Users(new UserDBReadWrite(parameters.getPathUserDB()));
+			users = new Users(new UserDBReadWrite(parameters.getPathUserDB(),logger));
 
 			// Create and start the scanner listener (admin command)
 			ScannerRunnable tScanner = new ScannerRunnable(this, logger);

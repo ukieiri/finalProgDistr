@@ -11,13 +11,16 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class UserDBReadWrite {
 
 	private String userDBPath;
+	private Logger logger;
 
-	public UserDBReadWrite(String dbPath) {
+	public UserDBReadWrite(String dbPath, Logger logger) {
 		this.userDBPath = dbPath;
+		this.logger = logger;
 		File userDB = new File(dbPath);
 
 		// Create the folders if they don't exist
@@ -26,7 +29,6 @@ public class UserDBReadWrite {
 				userDB.createNewFile();
 				write(new HashMap<String, User>());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -44,13 +46,10 @@ public class UserDBReadWrite {
 			map = (Map<String, User>) objectInput.readObject();
 
 		} catch (FileNotFoundException e) {
-			// TODO log ? Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO log ? Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO log ? Auto-generated catch block
 			e.printStackTrace();
 		} finally { // try to close the streams
 			try {
@@ -59,7 +58,6 @@ public class UserDBReadWrite {
 				if (objectInput != null)
 					objectInput.close();
 			} catch (IOException e) {
-				// TODO log ? Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -81,7 +79,7 @@ public class UserDBReadWrite {
 			}
 
 			catch (ClassCastException e) {
-				// TODO Log severe problem with the userList We found a non
+				logger.severe("No user list found");
 				// String/User map ! Not the good file.
 				// Return nothing so that the caller can create his own map
 				return null;
@@ -105,7 +103,6 @@ public class UserDBReadWrite {
 				// write the users map
 				outStream.writeObject(users);
 			} catch (IOException e) {
-				// TODO perhaps a log for the error ?
 				e.printStackTrace();
 			} finally {
 				try {

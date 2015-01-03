@@ -120,6 +120,11 @@ public class Client {
 		outServer.writeObject(password);
 		response = inServer.readObject().toString();
 
+		if(response.equals("PASSWORD")){
+			JOptionPane.showMessageDialog(frame,
+					"User already exists. Please, try another username");
+			return;			
+		}
 		if (response.equals("FALSE")) {
 			JOptionPane.showMessageDialog(frame,
 					"False username/password. Disconnecting");
