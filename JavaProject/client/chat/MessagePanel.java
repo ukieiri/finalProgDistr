@@ -39,6 +39,7 @@ public class MessagePanel extends JPanel {
 		south.add(send, BorderLayout.EAST);
 		send.addActionListener(new SendListener());
 		add(south, BorderLayout.SOUTH);
+		//send message when user presses Enter
 		writing.setFocusable(true);
 		writing.requestFocusInWindow();
 		writing.addKeyListener(new KeySendListener());				
