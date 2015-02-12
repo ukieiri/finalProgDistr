@@ -9,6 +9,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.logging.Logger;
 
 import link.Message;
 
@@ -21,18 +22,20 @@ public class UserRunnable implements Runnable, Observer {
 	private User user;
 	private MessageReadWrite messageReadWrite;
 	private Server server;
+	private Logging logging = new Logging();
+	private Logger logger = logging.getCustomLogger();
 
 	public UserRunnable(Socket cSocket, Server server) {
 		this.mySkClient = cSocket;
 		this.server = server;
 		try {
-			Server.logger.info("Create output stream with"
+			logger.info("Create output stream with"
 					+ mySkClient.toString());
 
 			// Create the output steam
 			outClient = new ObjectOutputStream(mySkClient.getOutputStream());
 
-			Server.logger.info("Create input stream with"
+			logger.info("Create input stream with"
 					+ mySkClient.toString());
 
 			// Create the input steam
@@ -42,7 +45,7 @@ public class UserRunnable implements Runnable, Observer {
 			outClient.writeObject("CONNECTED");
 			outClient.flush();
 		} catch (IOException e) {
-			Server.logger.warning(e.toString());
+			logger.warning(e.toString());
 			close();
 			return;
 		}
@@ -170,7 +173,7 @@ public class UserRunnable implements Runnable, Observer {
 
 	// Listen to the user connection
 	private void listen() {
-		Server.logger.info(user.getName() + " : Start listening");
+		logger.info(user.getName() + " : Start listening");
 		Thread thisThread = Thread.currentThread();
 
 		// while the connection is still bound and connected and the Server
@@ -181,7 +184,7 @@ public class UserRunnable implements Runnable, Observer {
 				Object o = inClient.readObject();
 				// Read what the client is sending
 
-				Server.logger.info(user.getName() + " : Receiving information");
+				logger.info(user.getName() + " : Receiving information");
 
 				if (o instanceof Message) {
 					// the client sent a message
@@ -214,11 +217,11 @@ public class UserRunnable implements Runnable, Observer {
 
 	// Handle the reception of a message from the client
 	private void cmdMessage(Message message) throws IOException {
-		Server.logger.info(user.getName() + " : Receiving message");
+		logger.info(user.getName() + " : Receiving message");
 
 		// Control that the client's user and the message's sender are the same
 		if (!user.getName().equals(message.getSender())) {
-			Server.logger.severe(user.getName()
+			logger.severe(user.getName()
 					+ " : tried to send a message with an incorrect sender !");
 			outClient.writeObject("INCORRECTSENDER");
 			outClient.flush();
@@ -228,7 +231,7 @@ public class UserRunnable implements Runnable, Observer {
 
 		// Control that the message's receiver exist
 		if (!server.getUserlist().containsKey(message.getReceiver())) {
-			Server.logger.severe(user.getName()
+			logger.severe(user.getName()
 					+ " : tried to send a message to an non existant user !");
 			outClient.writeObject("INCORRECTSENDER");
 			outClient.flush();
@@ -244,12 +247,12 @@ public class UserRunnable implements Runnable, Observer {
 
 		// if the receiver is connected, send him the message
 		if (client != null) {
-			Server.logger.info(user.getName() + " : Sending message to "
+			logger.info(user.getName() + " : Sending message to "
 					+ client.user.getName());
 
 			client.send(message);
 		}
-		Server.logger.info(user.getName() + " : Sending message to "
+		logger.info(user.getName() + " : Sending message to "
 				+ user.getName());
 
 		// send the message to the sender
@@ -275,7 +278,7 @@ public class UserRunnable implements Runnable, Observer {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 
-			Server.logger.severe("Couldn't send message IOE");
+			logger.severe("Couldn't send message IOE");
 
 			e.printStackTrace();
 		}
@@ -304,11 +307,11 @@ public class UserRunnable implements Runnable, Observer {
 				mySkClient.close();
 				mySkClient = null;
 			}
-			Server.logger.info("Connection closed");
+			logger.info("Connection closed");
 
 		} catch (IOException e) {
 			// if the streams/socket where already closed
-			Server.logger.warning(e.getMessage());
+			logger.warning(e.getMessage());
 		}
 	}
 

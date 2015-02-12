@@ -1,10 +1,12 @@
 package server;
 
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 public class ScannerRunnable implements Runnable {
 	private Scanner scan = new Scanner(System.in);
-
+	private Logging logging = new Logging();
+	private Logger logger = logging.getCustomLogger();
 	// Stop system
 	private volatile Thread listener;
 
@@ -16,15 +18,15 @@ public class ScannerRunnable implements Runnable {
 	}
 
 	public void run() {
-		Server.logger.info("Reader launched");
+		logger.info("Reader launched");
 		listener = Thread.currentThread();
 		Thread thisThread = listener;
 		String cmdLine;
 		while (thisThread == listener) {
-			Server.logger.info("Reader Ready");
+			logger.info("Reader Ready");
 			cmdLine = scan.nextLine(); // Read the next line sent to the console
 
-			Server.logger.info("Reader : " + cmdLine);
+			logger.info("Reader : " + cmdLine);
 			Users users = server.getUserlist();
 			Parameters parameters = server.getParameters();
 
@@ -41,12 +43,12 @@ public class ScannerRunnable implements Runnable {
 						&& cmdSplit[1].matches(parameters.getUserMatch())) {
 					// Create a new user
 					users.addUser(cmdSplit[1], cmdSplit[2]);
-					Server.logger.info("Reader : " + cmdSplit[1]
+					logger.info("Reader : " + cmdSplit[1]
 							+ " has been registered");
 
 				} else { // If we didn't send 3 words or the username didn't
 							// match the REGEX
-					Server.logger.warning("Reader : " + cmdLine
+					logger.warning("Reader : " + cmdLine
 							+ " does not match user requirement");
 
 				}
@@ -60,7 +62,7 @@ public class ScannerRunnable implements Runnable {
 					// IF we send at least 2 words and an existing username
 					users.removeConnection(users.get(cmdSplit[1]));
 				} else {
-					Server.logger.info(cmdSplit[1] + " is not connected");
+					logger.info(cmdSplit[1] + " is not connected");
 				}
 			}
 

@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import link.Message;
 
 public class MessageReadWrite {
 	private User user;
 	private Parameters parameters;
+	private Logging logging = new Logging();
+	private Logger logger = logging.getCustomLogger();
 
 	public MessageReadWrite(User user, Parameters parameters) {
 		this.user = user;
@@ -81,7 +84,7 @@ public class MessageReadWrite {
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
-			Server.logger.warning("File does not exist");
+			logger.warning("File does not exist");
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

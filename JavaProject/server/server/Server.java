@@ -7,8 +7,11 @@ import java.net.Socket;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
+
 public class Server {
-	public final static Logger logger = Logger.getLogger("Server");
+	//public final static Logger logger = Logger.getLogger("Server");
+	private Logging logging = new Logging();
+	private Logger logger = logging.getCustomLogger();
 	private Users users;
 	private ScannerRunnable tScanner;
 	private Parameters parameters;
